@@ -1,0 +1,20 @@
+max_folds_psuedo(A)
+    n = A.length
+    table = create_table(n,n)
+    for k from 6 to n
+        for i from 1 to n - k
+            j = i + k
+            
+            best_t = table[i][j - 1]
+            parallel for t from i to j - 5 
+                if will_talk(A[t], A[j])
+                    if t > i
+                        curr_t = 1 + table[i][t - 1] + 
+                              table[t + 1][j - 1]
+                    else
+                        curr_t = 1 + table[t + 1][j - 1]
+                    if curr_t > best_t
+                        best_t = curr_t
+            table[i][j] = best_t
+    return table[1][n]
+
