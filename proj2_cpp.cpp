@@ -15,7 +15,7 @@ bool will_talk(char first, char second) {
            first == 'W' && second == 'T' ||
            first == 'T' && second == 'W';
 }
-
+/*
 void rebuild(int** j_matches, int max_pairs, int n, int** pairs) {
     int pair[2];
     stack<int[2]> sp;
@@ -53,8 +53,21 @@ void rebuild(int** j_matches, int max_pairs, int n, int** pairs) {
     }
 
 }
+*/
+
+void zero_out(int** table, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            table[i][j] = 0;
+        }
+    }
+}
 int max_line_folds(char* A, int** j_matches, int n) {
-    int table[n][n];
+    int *table[10];
+    for (int i = 0; i < 10; i++) {
+        table[i] = new int[10];
+    }
+    zero_out(table, n);
     int curr_t;
     int j, best_t, j_match;
     for (int k = 5; k < n; k++) {
@@ -89,6 +102,7 @@ int main() {
     for (int i = 0; i < 10; i++) {
         j_matches[i] = new int[10];
     }
+    zero_out(j_matches, 10);
     int maximum = max_line_folds(test, j_matches, 10);
     printf("max pairs %d\n", maximum);
 }
