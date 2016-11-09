@@ -2,11 +2,11 @@ max_folds_psuedo(A)
     n = A.length
     table = create_table(n,n)
     for k from 6 to n
-        for i from 1 to n - k
+        parallel for i from 1 to n - k
             j = i + k
             
             best_t = table[i][j - 1]
-            parallel for t from i to j - 5 
+            for t from i to j - 5
                 if will_talk(A[t], A[j])
                     if t > i
                         curr_t = 1 + table[i][t - 1] + 
@@ -17,4 +17,14 @@ max_folds_psuedo(A)
                         best_t = curr_t
             table[i][j] = best_t
     return table[1][n]
+
+#THE SECTION BELOW IS FOR COMMENTS
+We can make the loop for i parallel as each loop iteration does not depend on the results of previous loops.
+We talked about the fact that we needed to do a diagonal walk through of the table.
+This is actually what the code already does. We move through the spaces separated by k, then move to space separated by
+k+1, etc. Results for any opt(i_1, i_1+k) will not depend on opt(i_2, 1_2 +k) where i_1 != 1_2.
+
+We can also parallelize the t loop based on similar logic. However, upon closer inspection I don't see what benefit
+that would give us? Since the work inside the t-loop should be theta(1), I don't think we will get any benefit from
+parallelizing. On paper it should have no effect, though I would imagine it would worsen our wall clock performance.
 
