@@ -1,353 +1,208 @@
+//
+// Created by Maxwell Poole on 11/5/16.
+//
+
+#include <iostream>
+#include <stack>
+#include <omp.h>
+#include <stdio.h>
+#include <ctime>
+#include <fstream> 
+#include <string>
+#include <cstdlib>
+
+using namespace std; //I know, forgive me
+
+ bool will_talk(char first, char second) {
+     return (first == 'H' && second == 'G') ||
+            (first == 'G' && second == 'H') ||
+            (first == 'W' && second == 'T') ||
+            (first == 'T' && second == 'W');
+ }
 /*
-
-CMSC 441, Introduction to Algorithims
-Fall 16, Dr. Marron
-
-
-Author: Michael Aebig
-Project 1, Dynamic Programming (DP).
-
-
-This program uses an input file containing a single, one line string.  The
-
-string must be comprised of only {H,G,W,T} characters.  OPTij() is a recursive
-
-function which navigates through pairs of indices, starting from a 'center'
-
-and working 'outwards'.  This is the general idea behind DP, where we 
-
-identify subproblems, and the smallest of such, and solve them from 
-
-the bottom up, using a table to look up previously solved sub problems.
-
-
-int main() will test OPTij() by taking in the string from the input file to 
-
-create a substring of 32 varying lengths, ranging from 10 to 5000.  Each substring 
-
-is treated by OPTij() 100 times, with the elapsed time recorded.  The average time
-
-is computed before moving on to the next, larger, substring.  
-
-
-The times will be copied from the gl terminal and a multilinear regression
-
-model will be fit to the data using a python program I did eariler this 
-
-semester for CMSC 455.  We can obtain visuals via MS Excel.
-
+void rebuild(int** j_matches, int max_pairs, int n, int** pairs) {
+    int pair[2];
+    stack<int[2]> sp;
+    sp.push({0,n - 1});
+    int stack_size = 1; //represent the number of i, j pairs, not total items in stack
+    int i, j, t, pair_no = 0;
+    //while there are more items to visit
+    while (!sp.empty()) {
+        int pair[2] = sp.pop();
+        j = pair[1];
+        i = pair[0];
+        if (j - i <= 4) {
+          continue;
+        }
+        if (j_matches[i][j] == -1) {
+            sp.push({i, j-1});
+        }
+        else {
+            t = j_matches[i][j];
+            if (!(j - 4 > t && t >= i)) {
+                continue;
+            }
+            pairs[pair_no][0] = t;
+            pairs[pair_no][1] = j;
+            pair_no++;
+            sp.push({i, t-1});
+            stack_size++;
+            sp.push({t+1, j-1});
+            stack_size++;
+        }
+    }
+}
 */
 
-
-
-
-#include<string>
-#include<fstream>
-#include<iostream>
-#include<cstdlib>
-#include<ctime>
-
-      ///////////////////////////////////////////////////
-     ///////////////////////////////////////////////////
-    unsigned int len = 0;   ///////////////////////////
-   /////////////////////////////////////////////////// 
-  ///////////////////////////////////////////////////
-
-  
-  
-const unsigned int FILENAMELENGTH = 301;
-const char inFileName[FILENAMELENGTH] = 
-//        "test1.txt";
-//		"//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//test1.txt";
-        "//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//test2.txt";
-
-
-
-
-// Check two indicies to see if they are a matching pair
-bool isPair(std::string & s, unsigned int a, unsigned int b ) {
-    if(s[a] == 'H'){
-        if(s[b] == 'G')
-            return true;
-    }else if(s[a] == 'G'){
-            if(s[b] == 'H')
-                return true;
-    }else if(s[a] == 'W'){
-            if(s[b] == 'T')
-                return true;
-    }else if(s[a] == 'T'){
-            if(s[b] == 'W')
-                return true;
-    } 
-    return false;
-}
-
-
-
-
-
-
-
-unsigned int max(unsigned int x, unsigned int y){
-    if(x >= y) return x;
-    return y;
-}
-
-
-
-
-
-
-// Checks to see if an x,y pair is in a look up table
-int lookUp(int** t, unsigned int x, unsigned int y) {
-    if(x < len && y < len) {
-        if (x >= 0 && y >= 0){
-            return t[x][y];
-        }
-    }
-    return 0;
-}
-
-
-
-
-
-
-
-
-// Puts an x,y entry pair in the table
-void insert(int **t, unsigned int x, unsigned int y, unsigned int v) {
-    if(x < len && y < len) {
-        if(x >= 0 && y >= 0) {
-            t[x][y] = (int)v;
+void zero_out(int** table, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            table[i][j] = 0;
         }
     }
 }
+int max_line_folds(char* A, int** j_matches, int n) {
+    int *table[n];
+    for (int i = 0; i < n; i++) {
+        table[i] = new int[n];
+    }
+    zero_out(table, n);
+    int curr_t;
+    int j, best_t, j_match;
+    for (int k = 5; k < n; k++) {
+        #pragma omp parallel for
+        for (int i = 0; i < n -k; i++) {
+            //int thread_id = omp_get_thread_num();
+            //printf("thread no %d\n", thread_id);
+            j = i + k;
+            best_t = table[i][j-1];
+            j_match = -1;
+            for (int t = i; t < j-4; t++) {
+                if (will_talk(A[t], A[j])) {
+                    if (t > i) {
+                        curr_t = 1 + table[i][t - 1] + table[t + 1][j - 1];
+                    } else {
+                        curr_t = 1 + table[t + 1][j - 1];
+                    }
 
-
-
-
-
-///////////////////////////////////////////////////////////////////////////////
-// The main recursive fn for the program.  It requires a look up table, a string
-// and a start and ending index.  Some base cases are in the beginning, otherwise 
-// it will call itself either once or twice, depending on if the upper index, j 
-// is a part of a pair. If j is in a pair, then we iterate through all the 
-// the elements it could possibly pair with, t, and call OPTij for each element
-// that is before j and after i, but on either side of t. It j is not in a pair,  
-// then we simply call  OPT with i and j - 1.  
-// In order to filter out cases where indicies are out of bounds,
-//  we use intermidiate variables for storing recursivly found values, and 
-// operate on those values directly.//////////////////////////////////////////
-unsigned int OPTij(int** table, std::string & s, unsigned int i, unsigned int j) {
-    if(j > s.length()) 
-        return -1;
-    if(j <= i) 
-        return -1;
-    int temp3 = ((int)j - 4);
-    if((int)i >= temp3) { 
-        return 0;
-    } else {
-        if(lookUp(table, i, j) >= 0) {
-            if(isPair(s, i, j))
-                return (lookUp(table, i, j));
-            else {
-                if((unsigned int)lookUp(table, i, j) > len || lookUp(table, i, j) == 0) 
-                    return 0;
-                else 
-                    return (lookUp(table, i, j));
-            }
-        } else {
-            unsigned int temp1 = 0;
-            unsigned int temp2 = 0;
-            for(unsigned int t = i; (int)t < temp3; t++) {
-                if(isPair(s, j, t)) {
-                    unsigned int Tsit = OPTij(table, s, i, t - 1);
-                    unsigned int Tstj = OPTij(table, s, t + 1, j - 1);
-                    if(Tsit > s.length() && Tstj > s.length()) temp1 = 1;
-                    if(Tsit > s.length()) Tsit = 0;
-                    if(Tstj > s.length()) Tstj = 0;
-                    temp1 = max(temp1, 1 + Tsit + Tstj);
+                    if (curr_t > best_t) {
+                        best_t = curr_t;
+                        j_match = t;
+                    }
                 }
             }
-            unsigned int T2 = OPTij(table, s, i, j - 1);
-            temp2 = max(temp2, T2);
-            insert(table, i, j, max( temp1, temp2));
-            return max( temp1, temp2);
-        }//end else
-    }//end if else 
-}//end f.OPTij
 
+            table[i][j] = best_t;
+            j_matches[i][j] = j_match;
+        }
+    }
+	int m = table[0][n-1];
+	for (int i = 0; i < n; i++) {
+        delete table[i];
+    }
+    return m ;
+}
 
-
-
-
-
-
-
-
-
+float avg(float* f, int n){
+	float runTotal = 0.0;
+	for(int i = 0; i < n; i++)
+		runTotal += f[i];
+	return (runTotal / (float)n);
+};
 
 int main() {
-    std::ifstream iFile;
-    std::string totalStr;
-    iFile.open(inFileName, std::ios::in);
-    if(!iFile) exit(1);
-    iFile >> totalStr;
-    iFile.close();
-
-    //unsigned int totalLength = totalStr.length();
-    unsigned int loopLength = 4;
-    unsigned int totalPairs = 0;
-	//intermediate value for i + j
-    unsigned int inter = 0;
-	//we will run each size 100 times
-    unsigned int numTrials = 1;
-	//trials[] will hold the resulting number of pairs
-	// for each of the 32 size sub strings
-    unsigned int trials[32] = {};
-    unsigned int sizes[32] = {10,20,30,40,50,60,70,80,90,100,
-                    200,300,400,500,600,700,800,900,
-                    1000,1100,1200,1300,1400,1500,1600,
-                    1700,1800,1900,2000,3000,4000,5000};
-
-	//how many of the above sizes do we want to use?
-    for(unsigned int counter = 0; counter < 30; counter++) {
+	
+	//time_t bgn, end; 
+	int num_trials = 1; 
+	int STR_LEN_INDX = 25;
+	int STR_LEN [35] = {
+		10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, //11
+		1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, //+8
+		3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, //+8
+		5000, 5250, 5500, 5750,6000, 6250, 6500, 6750 };//+8	
+	char inFileName[301] = 
+		//"//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//multi//dna.txt";
+		"//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//multi//test1.txt";
+    
+	
+	ifstream inFile;
+	inFile.open(inFileName, ios::in);
+	if(!inFile) exit(1);
+	string full_str, part_str;
+	inFile >> full_str;
+	inFile.close();
+	
+	
+	
+	cout 
+		<<"\nUp to STR_LEN[" << STR_LEN_INDX 
+		<<"] = " << STR_LEN[STR_LEN_INDX] 
+		<< "\nNumber of runs per length: " << num_trials
+		<< "\n\nPairs\tLength\tavg time(sec)\n";
+	
+	//for each element in STR_LEN array
+	for(int indx = 0; indx < STR_LEN_INDX; indx++){	
+		//cout << endl;
+		int n = STR_LEN[indx];
+		size_t const MAX = n;
+		int *j_matches[n];
+		char test[MAX];
+		float results[num_trials];
+	
 		
-		//len is a global variable
-        len = sizes[counter];
-        
-        double* times = new double[numTrials];
-
-		//iterate through a size string numTrials times
-        for(unsigned int index = 0; index < numTrials; index++) {
-            times[index] = 0.0;
-            std::string tempStr = totalStr.substr(0, len);
-
-			//table will hold the values for memoization
-            int** table = new int*[len];
-            for(unsigned int i = 0; i < len; i++) {
-                table[i] = new int[len];
-                for(unsigned int j = 0; j < len; j++) {
-                    table[i][j] = -1;
-
-                }
-            }
-
-            time_t t_begin, t_end, t_diff;
-            t_begin = (time(NULL));
-
-			//here is the start of the recursion, most of the program is
-			// is in this for loop.  one pass through the entire string,
-			// excluding either edge, which is trimmed off due to the 
-			// no folds under a length of 4 property.  This loop finds
-			// out which of the largerst problems yields the best result.
-			// OPTij() traverses to the deepest level and builds the soltn
-			// back up to be returned here.
-			// This for loop could  be implemented in a bootstrap manner, 
-			// however having it in int main() will do just fine for us.
-            for(unsigned int i = loopLength + 1; i < tempStr.length(); i++) {
-                for(unsigned int j = 0; j < tempStr.length() - i; j++) {
-                    inter = i + j;
-                    totalPairs = OPTij(table, tempStr, j, inter);
-                }//end for j
-            }//end for i
-
-            t_end = (time(NULL));
-            t_diff = (t_end - t_begin);
-
-            times[index] = (double)t_diff;
-
-            for(unsigned int i = 0; i < len; i++)
-                delete[] table[i];
-            delete[] table;
-
-			//std::cout << "\n run time: " << t_diff << std::endl;
-			//std::cout << " total pairs: " << totalPairs << std::endl;
-            
-        }//end for index
-
-        trials[counter] = totalPairs;
-        double runTime = 0.0;
-        for(unsigned int idx = 0; idx < numTrials; idx++) 
-            runTime += times[idx];
-        
-        runTime /= (double)numTrials;
-        std::cout << "\n Running time avg: " << runTime << std::endl;
-        std::cout << " Number of pairs: " << trials[counter] << std::endl;
-        std::cout << " String length: " << len << std::endl << std::endl;
-        delete [] times;
-    }//end for counter
-
-    system("PAUSE");
-    return 0;
-}//end f.main
-
-
-
+		//partition off a sub string of the large
+		// 9000 long one we made
+		part_str = full_str.substr(0, n);
+		part_str.copy(test, MAX);
+		
+		
+		for (int i = 0; i < n; i++) {
+			j_matches[i] = new int[n];
+		}
+		
+		int maximum = 0;
+		
+		for(int jndx = 0; jndx < num_trials; jndx++){
+			zero_out(j_matches, n);
+			clock_t bgn = clock();
+			maximum = max_line_folds(test, j_matches, n);
+			results[jndx] = (float)(clock() - bgn) / CLOCKS_PER_SEC;
+		}
+			
+		
+		float a = avg(results, num_trials);
+		
+		cout << maximum 
+			<< "\t" << n 
+			<< "\t" << a << endl;
+		 
+		 
+		part_str.clear();
+		for (int i = 0; i < n; i++) {
+			delete j_matches[i];
+		}
+		//delete  j_matches;
+	}//end for  indx
+	
+	
+	
+}
 
 
 /*
 
-Some helpful resources 
-
-https://www.youtube.com/playlist?list=PLFDnELG9dpVynxWOGI9F1QSAEYFQg_2LY
-
-https://www.youtube.com/playlist?list=PLLH73N9cB21W1TZ6zz1dLkyIm50HylGyg
+open MP tutorial on yt
+https://www.youtube.com/playlist?list=PLLX-Q6B8xqZ8n8bwjGdzBJ25X2utwnoEG
 
 
 
 
-//////////////////////////////////////////
-  the Makefile      /////////////////////
-////////////////////////////////////////
-
-FLAGS = g++ -ansi -Wall
-
-FLAGS1 = g++ -ansi -Wall -std=c++0x
-
-OBJSO = driver.o  
-OBJSC = driver.cpp 
-
-all: $(OBJSO)
-	cat /dev/urandom | tr -dc 'HGWT' | fold -w 5000 | head -n 1 > test2.txt
-	$(FLAGS) $(OBJSO) -o driver.out
-	$(FLAGS) $(OBJSO) -o Driver.out
+http://hpcf.umbc.edu/how-to-run-programs-on-maya/
 
 
-driver.o: driver.cpp
-	$(FLAGS) driver.cpp -c
 
-run:
-	make all
-	./driver.out
 
-Driver:
-	./driver.out
-
-driver:
-	make all
-	./driver.out
-
-val:
-	clear
-	make all
-	valgrind --leak-check=full ./driver.out
-
-cat:
-	cat Makefile
-
-clean:
-	rm -rf *.o
-	rm -f *.out
-	rm -f *~ *.h.gch *#
-
-cls:
-	rm -rf *.o
-	rm -f *.out
-	rm -f *~ *.h.gch *#
-	clear
-	ls -l
+https://www.csee.umbc.edu/courses/undergraduate/441/fall16_marron/projects/
 
 
 
@@ -356,11 +211,5 @@ cls:
 
 
 
-
-
-
-
-
-
-
-EoF*/
+*/
+//EoF
