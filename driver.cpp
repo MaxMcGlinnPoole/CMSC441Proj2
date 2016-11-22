@@ -114,16 +114,16 @@ int main() {
 	
 	//time_t bgn, end; 
 	int num_trials = 1; 
-	int STR_LEN_INDX = 25;
-	int STR_LEN [35] = {
-		10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, //11
-		1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, //+8
-		3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, //+8
-		5000, 5250, 5500, 5750,6000, 6250, 6500, 6750 };//+8	
+	int STR_LEN_INDX = 1;
+	int STR_LEN [1] = {
+		//10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, //11
+		//1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, //+8
+		//3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, //+8
+		//5000, 5250, 5500, 5750,6000, 6250, 6500, 6750, 7000, 8000, 
+		9000 };//+8	
 	char inFileName[301] = 
 		//"//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//multi//dna.txt";
-		"//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//multi//test1.txt";
-    
+   "/home/maxpool1/CMSC441/test1.txt"; 
 	
 	ifstream inFile;
 	inFile.open(inFileName, ios::in);
@@ -131,7 +131,12 @@ int main() {
 	string full_str, part_str;
 	inFile >> full_str;
 	inFile.close();
-	
+    int num_threads;
+    #pragma omp parallel 
+    {
+        num_threads = omp_get_num_threads();
+    
+    }printf("threads: %d\n", num_threads);	
 	
 	
 	cout 
@@ -164,9 +169,9 @@ int main() {
 		
 		for(int jndx = 0; jndx < num_trials; jndx++){
 			zero_out(j_matches, n);
-			clock_t bgn = clock();
+			double bgn = omp_get_wtime();
 			maximum = max_line_folds(test, j_matches, n);
-			results[jndx] = (float)(clock() - bgn) / CLOCKS_PER_SEC;
+			results[jndx] = (float)(omp_get_wtime() - bgn);
 		}
 			
 		
