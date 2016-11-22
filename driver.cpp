@@ -1,6 +1,6 @@
 //
 // Created by Maxwell Poole on 11/5/16.
-//
+// and Mike Aebig
 
 #include <iostream>
 #include <stack>
