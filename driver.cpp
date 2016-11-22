@@ -1,17 +1,15 @@
 //
 // Created by Maxwell Poole on 11/5/16.
-// and Mike Aebig
+// and Michael Aebig
 
 #include <iostream>
-#include <stack>
 #include <omp.h>
 #include <stdio.h>
-#include <ctime>
 #include <fstream> 
 #include <string>
 #include <cstdlib>
 
-using namespace std; //I know, forgive me
+using namespace std;
 
  bool will_talk(char first, char second) {
      return (first == 'H' && second == 'G') ||
@@ -19,40 +17,6 @@ using namespace std; //I know, forgive me
             (first == 'W' && second == 'T') ||
             (first == 'T' && second == 'W');
  }
-/*
-void rebuild(int** j_matches, int max_pairs, int n, int** pairs) {
-    int pair[2];
-    stack<int[2]> sp;
-    sp.push({0,n - 1});
-    int stack_size = 1; //represent the number of i, j pairs, not total items in stack
-    int i, j, t, pair_no = 0;
-    //while there are more items to visit
-    while (!sp.empty()) {
-        int pair[2] = sp.pop();
-        j = pair[1];
-        i = pair[0];
-        if (j - i <= 4) {
-          continue;
-        }
-        if (j_matches[i][j] == -1) {
-            sp.push({i, j-1});
-        }
-        else {
-            t = j_matches[i][j];
-            if (!(j - 4 > t && t >= i)) {
-                continue;
-            }
-            pairs[pair_no][0] = t;
-            pairs[pair_no][1] = j;
-            pair_no++;
-            sp.push({i, t-1});
-            stack_size++;
-            sp.push({t+1, j-1});
-            stack_size++;
-        }
-    }
-}
-*/
 
 void zero_out(int** table, int n) {
     for (int i = 0; i < n; i++) {
@@ -110,23 +74,24 @@ float avg(float* f, int n){
 	return (runTotal / (float)n);
 };
 
-int main() {
+int main(int argc, char* argv[]) {
 	
 	//time_t bgn, end; 
 	int num_trials = 1; 
-	int STR_LEN_INDX = 1;
-	int STR_LEN [1] = {
-		//10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, //11
-		//1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, //+8
-		//3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, //+8
-		//5000, 5250, 5500, 5750,6000, 6250, 6500, 6750, 7000, 8000, 
+	int STR_LEN_INDX = 5;
+	int STR_LEN [38] = {
+		10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500, //11
+		1000, 1250, 1500, 1750, 2000, 2250, 2500, 2750, //+8
+		3000, 3250, 3500, 3750, 4000, 4250, 4500, 4750, //+8
+		5000, 5250, 5500, 5750,6000, 6250, 6500, 6750, 7000, 8000, 
 		9000 };//+8	
-	char inFileName[301] = 
-		//"//afs//umbc.edu//users//m//a//maebig1//home//CMSC341//dna//multi//dna.txt";
-   "/home/maxpool1/CMSC441/test1.txt"; 
-	
-	ifstream inFile;
-	inFile.open(inFileName, ios::in);
+	//char inFileName[301] = argv[1];	
+	if (argc < 2) {
+       printf("Error: Please provide a file to read\n");
+       return 1;
+    }
+    ifstream inFile;
+	inFile.open(argv[1], ios::in);
 	if(!inFile) exit(1);
 	string full_str, part_str;
 	inFile >> full_str;

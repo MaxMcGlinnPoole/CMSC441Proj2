@@ -10,5 +10,6 @@
 #SBATCH --ntasks=1
 
 export KMP_AFFINITY="verbose,compact"
-export OMP_NUM_THREADS=1
-srun ./driver > 1_9000_2010_1run.out
+export OMP_NUM_THREADS=4
+srun ./driver test1.txt
+
